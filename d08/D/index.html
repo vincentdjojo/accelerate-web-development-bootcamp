@@ -1,0 +1,41 @@
+<html>
+    <head>
+        <title>AJAX example</title>
+    </head>
+    <body>
+        <script>
+            class User {
+                constructor(first,last){
+                    this.first = first;
+                    this.last = last;
+                }
+            }
+
+            function getRandomProfiles(cb){
+                var http = new XMLHttpRequest();
+
+                http.open('GET','https://randomuser.me/api/?results=5',true,'user','pw');
+
+                http.onreadystatechange = function() {
+                    if(http.readyState != XMLHttpRequest.DONE) {
+                        return;
+                    } else if(http.status == 200) {
+                        // Return the Data by calling callback with the resulting data 
+                        var data = JSON.parse(http.responseText);
+                        var resultArr = data.results.map(function(person){
+                            return new User(person.name.first, person.name.last);
+                        })
+                        cb(resultArr);
+                    } else {
+                        console.log('error occurred' + http.status);
+                    }
+                }
+                http.send();
+            }
+            getRandomProfiles(console.log);
+            
+        </script>
+    </body>
+</html>
+
+

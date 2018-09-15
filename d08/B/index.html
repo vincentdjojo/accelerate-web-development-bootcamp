@@ -1,0 +1,30 @@
+<html>
+    <head>
+        <title>AJAX example</title>
+    </head>
+    <body>
+        <script>
+            function informMe(endpoint, value, callback){
+                var http = new XMLHttpRequest();
+                http.open('GET',`https://restcountries.eu/rest/v2/${endpoint}/${value}`);
+                http.onreadystatechange = function() {
+                    if(http.readyState != XMLHttpRequest.DONE) {
+                        return;
+                    } else if(http.status == 200) {
+                        // Return the Data by calling callback with the resulting data 
+                        callback(http.responseText);
+                    } else {
+                        console.log('error occurred' + http.status);
+                    }
+                }
+                http.send();
+            }
+
+            informMe('alpha','co',function(data){
+                console.log(data);
+                
+            });
+
+        </script>
+    </body>
+</html>

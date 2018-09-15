@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Countries & Sunset + Sunrise </title>
+</head>
+
+<body>
+    <form id="form" action="" method="post">
+        <input type="text" name="firstCountry" placeholder="First Country" required>
+        <input type="text" name="secondCountry" placeholder="Second Country" required>
+        <input type="submit" name="submit" value="submit">
+    </form>
+    <div id='times'>
+
+    </div>
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+    <script type="text/javascript">
+        $(function(){
+            
+            $('#form').submit(ev => {
+                ev.preventDefault();
+                var countryName1 = $(this).find('[name=firstCountry]').val();
+                var countryName2 = $(this).find('[name=secondCountry]').val();
+
+                $.when(getCountryData(countryName1),getCountryData(countryName2)).then(function(countryData1,countryData2){
+                    var country1 = countryData1[0][0];
+                    var country2 = countryData2[0][0]
+                    var latLng1 = country1.latlng;
+                    var latlng2 = country2.latlng;
+                    $.when(getSunriseSunsetData(`lat=${latLng1[0].toFixed(1)}&lng=${latLng1[1].toFixed(1)}`),
+                            getSunriseSunsetData(`lat=${latlng2[0].toFixed(1)}&lng=${latlng2[1].toFixed(1)}`)).then(function(sunData1,sunData2){
+                        var c1Sunrise = new Date(sunData1[0].results.sunrise);
+                        var c2Sunrise = new Date(sunData2[0].results.sunrise);
+                        var c1Sunset = new Date(sunData1[0].results.sunset);
+                        var c2Sunset = new Date(sunData2[0].results.sunset);
+
+                        $('#times').text(`Sunrise of  ${country1.name} is ${ (c1Sunrise - c2Sunrise > 0)? "Later":"Earlier"}
+                                than ${country2.name} by ${toHHMMSS(c1Sunrise - c2Sunrise)}`);
+                        
+                        $('#times').append(`<br/>Sunset of  ${country1.name} is ${ (c1Sunset - c2Sunset > 0)? "Later":"Earlier"}
+                                than ${country2.name} by ${toHHMMSS(c1Sunset - c2Sunset)}`);                                
+                    });
+                });
+            });
+            function getSunriseSunsetData(latLng) {
+                return $.get(`https://api.sunrise-sunset.org/json?${latLng}&formatted=0`);
+            }
+            function getCountryData(countryName){
+                return $.get(`https://restcountries.eu/rest/v2/name/${countryName}`)
+            }
+            function toHHMMSS(miniseconds){
+                var seconds = Math.abs(miniseconds) / 1000;
+                var hourDisplayed = Math.floor(seconds / 3600) +"";
+                var minuteDisplayed = Math.floor(seconds % 3600 / 60 ) + "";
+                var secondDisplayed = (seconds % 60).toFixed(0) + "";
+                return `${hourDisplayed.padStart(2,"0")}:${minuteDisplayed.padStart(2,"0")}:${secondDisplayed.padStart(2,"0")}`;
+            }
+        });
+    </script>
+</body>
+
+</html>

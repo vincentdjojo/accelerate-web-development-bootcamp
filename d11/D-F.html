@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Sunset + Sunrise</title>
+</head>
+
+<body>
+    <form id="form" action="" method="post">
+        <input type="text" name="lat" placeholder="latitude" value="22.25" required>
+        <input type="text" name="lng" placeholder="longitude" value="114.16666666" required>
+        <input type="submit" name="submit" value="submit">
+    </form>
+    <button id="btn">compare to hk</button>
+    <div id='times'>
+
+    </div>
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+    <script type="text/javascript">
+        $('#form').on('submit', function(e) {
+            e.preventDefault();
+            var oldDay = new Date(new Date().getTime()- 86400*1000);
+            var nextDay = new Date(new Date().getTime()+ 86400*1000);
+            var data = $('#form').serialize();
+            // Call with the input longitude and latitude check for today, since no date and no manually added latitude and longitude are passed in, first two parameter are 0. The callback of callApi call the timeDifference function to calculate the time. The callback of this function will return the time difference which we can put out into the HTML
+            callApi(new Date(), data, today => {
+                callApi(oldDay,data,yesterday=>{
+                    callApi(nextDay,data,tomorrow =>{
+                        var sunrisesTime = [new Date(today.sunrise),new Date(yesterday.sunrise),new Date(tomorrow.sunrise)];
+                        var sunsetsTime = [new Date(today.sunset),new Date(yesterday.sunset), new Date(tomorrow.sunset)];
+                        var now = new Date();
+                        var nextSunrise = sunrisesTime.find(function(sunrise){
+                            return (sunrise - now) > 0;
+                        });
+                        var nextSunset = sunsetsTime.find(function(sunset){
+                            return (sunset - now) > 0;
+                        });
+                        var pastSunrises = sunrisesTime.filter(function(sunrise){
+                            return (now - sunrise) > 0
+                        }).sort().reverse();
+                        var pastSunsets = sunsetsTime.filter(function(sunset){
+                            return (now - sunset) > 0
+                        }).sort().reverse();
+                        var prevSunrise = pastSunrises[0];
+                        var prevSunset = pastSunsets[0];
+
+                        $('#times').append("The time difference between previous sunrise and now is "+toHHMMSS(now-prevSunrise)+"<br/>");
+                        $('#times').append("The time difference between next sunrise and now is "+toHHMMSS(nextSunrise - now)+"<br/>");
+                        $('#times').append("The time difference between previous sunset and now is "+toHHMMSS(now-prevSunset)+"<br/>");
+                        $('#times').append("The time difference between next sunset and now is "+toHHMMSS(nextSunset - now)+"<br/>");
+
+                        $('#times').append("The time difference between yesterday sunrise and now is "+toHHMMSS(now - new Date(yesterday.sunrise))+"<br/>");
+                        $('#times').append("The time difference between yesterday sunset and now is "+toHHMMSS(now - new Date(yesterday.sunset))+"<br/>");
+                        $('#times').append("The time difference between tomorrow sunrise and now is "+toHHMMSS(new Date(tomorrow.sunrise) - now)+"<br/>");
+                        $('#times').append("The time difference between tomorrow sunset and now is "+toHHMMSS(new Date(tomorrow.sunset) - now)+"<br/>");
+
+
+                    });
+                });
+            });
+        });
+
+        $('#btn').on('click', function(e) {
+            e.preventDefault();
+            callApi(new Date(),$('#form').serialize(), inputPlace => {
+                callApi(new Date(),'lat=22.25&lng=114.16666666',hongKong =>{
+                    var hongKongDiff = new Date(hongKong.sunset) - new Date(hongKong.sunrise);
+                    var inputDiff =new Date(inputPlace.sunset) - new Date(inputPlace.sunrise);
+                    if(inputDiff > hongKongDiff){
+                        alert('Your input has a longer day time');
+                    }else{
+                        alert('HK has longer day time')
+                    }
+                });
+            });
+        });
+
+        function callApi(date, latLng ,cb) {
+            $.ajax({
+                type: 'GET',
+                // call api, manually define date so that any date can be called
+                url:  `https://api.sunrise-sunset.org/json?${latLng}&date=${date.getFullYear()}-${date.getMonth()+1}-${date.getDate()}&formatted=0`,
+                dataType: "json",
+            }).done(function(data){
+                cb(data.results);
+            }).fail(function(err) {
+                console.log('error', err);
+            });
+        }
+        function toHHMMSS(miniseconds){
+            var seconds = miniseconds / 1000;
+            var hourDisplayed = Math.floor(seconds / 3600) +"";
+            var minuteDisplayed = Math.floor(seconds % 3600 / 60 ) + "";
+            var secondDisplayed = (seconds % 60).toFixed(0) + "";
+            return `${hourDisplayed.padStart(2,"0")}:${minuteDisplayed.padStart(2,"0")}:${secondDisplayed.padStart(2,"0")}`;
+        }
+    </script>
+</body>
+
+</html>
